@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Gang Intelligence Database</title>
+<meta name="theme-color" content="#10141b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gang DB">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#10141b;
+    --panel:#1a212c;
+    --panel-2:#212a37;
+    --border:#2b3547;
+    --border-soft:#232c3b;
+    --text:#e7eaf0;
+    --text-dim:#8d96a8;
+    --text-faint:#5b6478;
+    --accent:#4f7fb5;
+    --accent-dim:#3a5f88;
+    --accent-soft:rgba(79,127,181,0.14);
+    --warn:#b0793a;
+    --warn-soft:rgba(176,121,58,0.16);
+    --danger:#b5504f;
+    --danger-soft:rgba(181,80,79,0.14);
+    --radius:10px;
+    --sans:'Inter',system-ui,-apple-system,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.5;
+    min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+  }
+  ::selection{background:var(--accent-soft);}
+  button, input, select, textarea{font-family:inherit; font-size:inherit; color:inherit;}
+  button{cursor:pointer;}
+  a{color:var(--accent);}
+
+  /* ---------- App shell ---------- */
+  #app{display:flex; flex-direction:column; min-height:100vh;}
+
+  header.topbar{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border-soft);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{display:flex; flex-direction:column; gap:1px; margin-right:auto; min-width:0; overflow:hidden; flex:1;}
+  .brand .name{font-weight:700; font-size:16px; letter-spacing:0.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .brand .sub{font-size:11.5px; color:var(--text-faint); font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .icon-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    border-radius:8px; padding:8px; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .icon-btn:hover{border-color:var(--accent-dim); color:var(--text);}
+  .btn{
+    border:1px solid var(--border); background:var(--panel-2); color:var(--text);
+    border-radius:8px; padding:9px 14px; font-weight:600; font-size:13.5px;
+    display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+    flex-shrink:0;
+  }
+  .btn:hover{border-color:var(--accent-dim);}
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:#0d141d;}
+  .btn-primary:hover{background:#5c8bc2;}
+  .btn-danger{background:transparent; border-color:var(--danger); color:var(--danger);}
+  .btn-danger:hover{background:var(--danger-soft);}
+  .btn-ghost{background:transparent; border:1px solid var(--border);}
+  .btn-sm{padding:6px 10px; font-size:12.5px;}
+  .btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  main.layout{display:flex; flex:1; min-height:0;}
+
+  /* ---------- Filter rail ---------- */
+  aside.filters{
+    width:270px; flex-shrink:0;
+    background:var(--panel);
+    border-right:1px solid var(--border-soft);
+    padding:16px 16px 40px;
+    overflow-y:auto;
+  }
+  .filters h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint);
+    margin:18px 0 8px; font-weight:600;
+  }
+  .filters h2:first-child{margin-top:0;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12px; color:var(--text-dim); margin-bottom:5px;}
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+    border-radius:7px; padding:9px 10px; font-size:13.5px;
+  }
+  .field input::placeholder, .field textarea::placeholder{color:var(--text-faint); opacity:1;}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent-dim); outline-offset:0; border-color:var(--accent);}
+  .field input:-webkit-autofill,
+  .field input:-webkit-autofill:hover,
+  .field input:-webkit-autofill:focus{
+    -webkit-text-fill-color:var(--text);
+    -webkit-box-shadow:0 0 0 1000px var(--bg) inset;
+    box-shadow:0 0 0 1000px var(--bg) inset;
+    caret-color:var(--text);
+  }
+  .checkline{display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:13px; color:var(--text-dim);}
+  .checkline input{width:16px; height:16px; accent-color:var(--accent);}
+  .filters-footer{margin-top:16px; display:flex; gap:8px;}
+
+  .search-wrap{padding:16px 18px 0; }
+  .search-box{
+    display:flex; align-items:center; gap:8px;
+    background:var(--bg); border:1px solid var(--border); border-radius:9px; padding:9px 12px;
+  }
+  .search-box input{flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:14px;}
+  .search-box svg{flex-shrink:0; opacity:0.55;}
+
+  /* ---------- Content ---------- */
+  section.content{flex:1; min-width:0; display:flex; flex-direction:column; overflow-y:auto;}
+  .content-inner{padding:16px 18px 60px;}
+  .result-meta{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; color:var(--text-faint); font-size:12.5px; font-family:var(--mono);}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:12px;
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--border-soft); border-radius:var(--radius);
+    padding:13px; display:flex; gap:12px; text-align:left; align-items:flex-start;
+  }
+  .card:hover{border-color:var(--accent-dim);}
+  .thumb{
+    width:56px; height:56px; border-radius:8px; background:var(--panel-2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid var(--border-soft);
+  }
+  .thumb img{width:100%; height:100%; object-fit:cover;}
+  .thumb svg{opacity:0.35;}
+  .card-body{min-width:0; flex:1;}
+  .card-name{font-weight:600; font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .card-aka{font-family:var(--mono); font-size:12px; color:var(--accent); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;}
+  .card-meta{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;}
+  .tag{
+    font-size:11px; padding:3px 8px; border-radius:100px; background:var(--panel-2); color:var(--text-dim);
+    border:1px solid var(--border-soft); white-space:nowrap;
+  }
+  .tag-gang{background:var(--accent-soft); color:#a7c6e8; border-color:transparent;}
+  .tag-warn{background:var(--warn-soft); color:#e0b382; border-color:transparent;}
+  .card-row{background:transparent; border:none; padding:0; width:100%; text-align:left; display:flex; gap:12px; align-items:flex-start;}
+
+  .empty-state{
+    text-align:center; padding:70px 20px; color:var(--text-faint);
+  }
+  .empty-state svg{opacity:0.3; margin-bottom:14px;}
+  .empty-state h3{color:var(--text-dim); font-weight:600; margin:0 0 6px; font-size:15px;}
+  .empty-state p{font-size:13px; margin:0;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(8,10,14,0.72); z-index:100;
+    display:flex; align-items:flex-start; justify-content:center;
+    overflow-y:auto; padding:24px 14px;
+  }
+  .modal{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    width:100%; max-width:640px; margin:auto;
+  }
+  .modal-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--border-soft);
+    position:sticky; top:0; background:var(--panel); border-radius:14px 14px 0 0; z-index:2;
+  }
+  .modal-header h3{margin:0; font-size:16px;}
+  .modal-body{padding:18px 20px;}
+  .modal-footer{
+    padding:14px 20px; border-top:1px solid var(--border-soft);
+    display:flex; justify-content:flex-end; gap:8px; position:sticky; bottom:0; background:var(--panel); border-radius:0 0 14px 14px;
+  }
+  .modal-footer .spacer{margin-right:auto;}
+
+  fieldset{border:1px solid var(--border-soft); border-radius:10px; padding:14px; margin:0 0 16px;}
+  legend{font-size:11.5px; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-faint); padding:0 6px; font-weight:600;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .repeat-row{
+    border:1px solid var(--border-soft); border-radius:8px; padding:10px; margin-bottom:8px; position:relative; background:var(--bg);
+  }
+  .repeat-row .row-remove{
+    position:absolute; top:8px; right:8px; background:transparent; border:none; color:var(--text-faint); padding:4px;
+  }
+  .repeat-row .row-remove:hover{color:var(--danger);}
+  .add-row-btn{
+    background:transparent; border:1px dashed var(--border); color:var(--text-dim);
+    border-radius:8px; padding:8px 12px; font-size:12.5px; width:100%; text-align:center;
+  }
+  .add-row-btn:hover{border-color:var(--accent-dim); color:var(--accent);}
+
+  .photo-list{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px;}
+  .photo-item{position:relative; width:84px;}
+  .photo-item .ph-thumb{
+    width:84px; height:84px; border-radius:8px; object-fit:cover; background:var(--panel-2); border:1px solid var(--border-soft);
+    display:block;
+  }
+  .photo-item .ph-caption{
+    width:100%; margin-top:4px; font-size:10.5px; background:var(--bg); border:1px solid var(--border-soft);
+    border-radius:5px; padding:4px 5px; color:var(--text-dim);
+  }
+  .photo-item .ph-remove{
+    position:absolute; top:-6px; right:-6px; background:var(--danger); color:#fff; border:none;
+    width:18px; height:18px; border-radius:50%; font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .add-photo-btn{
+    width:84px; height:84px; border:1px dashed var(--border); border-radius:8px; background:transparent;
+    color:var(--text-faint); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:3px; font-size:10.5px;
+  }
+  .add-photo-btn:hover{border-color:var(--accent-dim); color:var(--accent);}
+
+  /* ---------- Detail view ---------- */
+  .detail-hero{display:flex; gap:16px; margin-bottom:18px;}
+  .detail-photo{width:100px; height:100px; border-radius:10px; object-fit:cover; background:var(--panel-2); border:1px solid var(--border-soft); flex-shrink:0;}
+  .detail-title h2{margin:0 0 3px; font-size:19px;}
+  .detail-title .akas{font-family:var(--mono); color:var(--accent); font-size:13.5px;}
+  .detail-title .tags{margin-top:9px;}
+  .detail-section{margin-bottom:18px;}
+  .detail-section h4{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-faint); margin:0 0 8px; font-weight:600;
+  }
+  .kv-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .kv{background:var(--bg); border:1px solid var(--border-soft); border-radius:8px; padding:9px 11px;}
+  .kv .k{font-size:11px; color:var(--text-faint); margin-bottom:2px;}
+  .kv .v{font-size:13.5px;}
+  .entry-card{background:var(--bg); border:1px solid var(--border-soft); border-radius:8px; padding:10px 12px; margin-bottom:8px;}
+  .entry-card .entry-top{display:flex; justify-content:space-between; font-size:12px; color:var(--text-faint); margin-bottom:4px; font-family:var(--mono);}
+  .entry-card .entry-body{font-size:13.5px; white-space:pre-wrap;}
+  .notes-block{white-space:pre-wrap; font-size:13.5px; background:var(--bg); border:1px solid var(--border-soft); border-radius:8px; padding:11px;}
+  .photo-strip{display:flex; gap:10px; flex-wrap:wrap;}
+  .photo-strip img{width:88px; height:88px; object-fit:cover; border-radius:8px; border:1px solid var(--border-soft); cursor:zoom-in;}
+  .muted{color:var(--text-faint); font-size:13px;}
+
+  /* ---------- Lightbox ---------- */
+  .lightbox{position:fixed; inset:0; background:rgba(4,5,7,0.92); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .lightbox img{max-width:100%; max-height:100%; border-radius:8px;}
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:10px 16px; border-radius:8px; font-size:13px; z-index:300; opacity:0; pointer-events:none;
+    transition:opacity 0.2s ease; box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  #toast.show{opacity:1;}
+
+  /* ---------- Mobile ---------- */
+  .filters-toggle{display:none;}
+  @media (max-width:860px){
+    aside.filters{
+      position:fixed; top:0; left:0; bottom:0; z-index:90; transform:translateX(-100%);
+      transition:transform 0.22s ease; box-shadow:0 0 40px rgba(0,0,0,0.5); width:82vw; max-width:300px;
+    }
+    aside.filters.open{transform:translateX(0);}
+    .filters-toggle{display:inline-flex;}
+    .row2{grid-template-columns:1fr;}
+    .kv-grid{grid-template-columns:1fr;}
+    .brand .sub{display:none;}
+    .filters-scrim{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:80;}
+    .filters-scrim.show{display:block;}
+  }
+  @media (max-width:480px){
+    header.topbar{gap:6px; padding:10px;}
+    .brand .name{font-size:14px;}
+    .user-line{font-size:10.5px;}
+    #newRecordBtn{padding:9px; gap:0;}
+    #newRecordBtn .btn-label{display:none;}
+  }
+
+  /* ---------- Login ---------- */
+  .login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-card{
+    width:100%; max-width:360px; background:var(--panel); border:1px solid var(--border);
+    border-radius:14px; padding:26px 24px;
+  }
+  .login-title{font-weight:700; font-size:17px; margin-bottom:5px;}
+  .login-sub{font-size:13px; color:var(--text-dim); margin-bottom:18px; line-height:1.5;}
+  .login-error{
+    background:var(--danger-soft); color:#e0a7a6; border-radius:7px; padding:8px 10px;
+    font-size:12.5px; margin-top:10px;
+  }
+  .login-footnote{font-size:11.5px; color:var(--text-faint); margin-top:16px; text-align:center; line-height:1.5;}
+  .sync-dot{
+    width:7px; height:7px; border-radius:50%; background:#5cc98b; display:inline-block; margin-right:6px; flex-shrink:0;
+  }
+  .sync-dot.offline{background:var(--text-faint);}
+  .user-line{display:flex; align-items:center; gap:0; font-size:11.5px; color:var(--text-faint); font-family:var(--mono); min-width:0; overflow:hidden;}
+  .user-line #userLabel{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-title">Gang Intelligence Database</div>
+      <div class="login-sub">Sign in with the account your database admin created for you. There is no self-service sign-up.</div>
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" required autocomplete="username">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" required autocomplete="current-password">
+        </div>
+        <div class="login-error" id="loginError" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary" id="loginSubmit" style="width:100%; justify-content:center; margin-top:14px;">Sign in</button>
+      </form>
+      <div class="login-footnote">Ask your admin to add your email under Firebase Authentication if you don't have credentials yet.</div>
+    </div>
+  </div>
+
+  <div id="appShell" style="display:none;">
+  <header class="topbar">
+    <button class="icon-btn filters-toggle" id="filtersToggle" aria-label="Toggle filters">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+    </button>
+    <div class="brand">
+      <div class="name">Gang Intelligence Database</div>
+      <div class="user-line"><span class="sync-dot" id="syncDot"></span><span id="userLabel">Connecting\u2026</span></div>
+    </div>
+    <button class="icon-btn" id="menuBtn" aria-label="More options" title="Backup &amp; data options">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="icon-btn" id="signOutBtn" aria-label="Sign out" title="Sign out">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+    <button class="btn btn-primary" id="newRecordBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span class="btn-label">New record</span>
+    </button>
+  </header>
+
+  <main class="layout">
+    <div class="filters-scrim" id="filtersScrim"></div>
+    <aside class="filters" id="filtersPanel">
+      <h2>Search</h2>
+      <div class="field">
+        <label for="q">Name or moniker</label>
+        <input type="search" id="q" placeholder="e.g. Perez or &quot;Ghost&quot;">
+      </div>
+
+      <h2>Identity</h2>
+      <div class="field">
+        <label for="fRace">Race</label>
+        <select id="fRace"><option value="">All</option></select>
+      </div>
+      <div class="field">
+        <label for="fSex">Sex</label>
+        <select id="fSex"><option value="">All</option></select>
+      </div>
+      <div class="field">
+        <label for="fGang">Gang affiliation</label>
+        <select id="fGang"><option value="">All</option></select>
+      </div>
+
+      <h2>Tattoos</h2>
+      <div class="field">
+        <label for="fTattoo">Description contains</label>
+        <input type="text" id="fTattoo" placeholder="e.g. teardrop, skull, number">
+      </div>
+
+      <h2>Weapons</h2>
+      <div class="field">
+        <label for="fWeapon">Description contains</label>
+        <input type="text" id="fWeapon" placeholder="e.g. handgun, rifle, knife">
+      </div>
+      <label class="checkline"><input type="checkbox" id="fHasWeapon"> Has weapons on file only</label>
+      <label class="checkline"><input type="checkbox" id="fHasTattoo"> Has tattoos on file only</label>
+
+      <h2>Address</h2>
+      <div class="field">
+        <label for="fAddress">Street, city, state, or ZIP contains</label>
+        <input type="text" id="fAddress" placeholder="e.g. Elm St or San Jose">
+      </div>
+
+      <h2>Vehicles</h2>
+      <div class="field">
+        <label for="fVehicle">Plate, make, model, or color contains</label>
+        <input type="text" id="fVehicle" placeholder="e.g. 7ABC123 or Civic">
+      </div>
+
+      <div class="filters-footer">
+        <button class="btn btn-ghost btn-sm" id="resetFilters" style="flex:1">Reset filters</button>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div class="search-wrap" style="display:none"></div>
+      <div class="content-inner">
+        <div class="result-meta">
+          <span id="resultCount">0 results</span>
+          <span id="recordCountLabel">0 total records</span>
+        </div>
+        <div class="grid" id="grid"></div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <h3>No records match</h3>
+          <p>Try clearing a filter or searching a different name.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="modalRoot"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot,
+  enableIndexedDbPersistence, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ============================================================
+// PASTE YOUR OWN FIREBASE PROJECT CONFIG HERE.
+// Get this from: Firebase Console > Project settings > General
+// > Your apps > Web app (</> icon) > SDK setup and configuration.
+// See README.md for the full setup walkthrough.
+// ============================================================
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+const RECORDS_COLLECTION = "records";
+
+enableIndexedDbPersistence(db).catch(()=>{ /* multiple tabs open, or unsupported browser \u2014 app still works online */ });
+
+(function(){
+  "use strict";
+
+  const SEX_OPTIONS = ["Male","Female","Unknown","Other"];
+  const RACE_SUGGESTIONS = ["White","Black","Hispanic/Latino","Asian","American Indian/Alaska Native","Pacific Islander","Other","Unknown"];
+  const MAX_RECORD_BYTES = 900000; // Firestore hard-caps a document at ~1MiB; stay safely under it
+
+  let records = [];
+  let editingId = null;
+  let currentPhotos = [];
+  let lastFocusEl = null;
+  let unsubscribeRecords = null;
+
+  // ---------------- Auth wiring ----------------
+  onAuthStateChanged(auth, (user)=>{
+    if(user){
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appShell').style.display = '';
+      document.getElementById('userLabel').textContent = user.email;
+      if(!unsubscribeRecords) subscribeToRecords();
+    } else {
+      if(unsubscribeRecords){ unsubscribeRecords(); unsubscribeRecords = null; }
+      records = [];
+      document.getElementById('appShell').style.display = 'none';
+      document.getElementById('loginScreen').style.display = '';
+      document.getElementById('loginSubmit').disabled = false;
+      document.getElementById('loginSubmit').textContent = 'Sign in';
+    }
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    const submitBtn = document.getElementById('loginSubmit');
+    errEl.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in\u2026';
+    try{
+      await signInWithEmailAndPassword(auth, email, password);
+    }catch(err){
+      console.error(err);
+      errEl.textContent = 'Sign-in failed. Check the email and password, or ask your admin to verify your account.';
+      errEl.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign in';
+    }
+  });
+
+  document.getElementById('signOutBtn').addEventListener('click', ()=>{
+    if(confirm('Sign out of the shared database?')) signOut(auth);
+  });
+
+  // ---------------- Firestore sync ----------------
+  function subscribeToRecords(){
+    const dot = document.getElementById('syncDot');
+    unsubscribeRecords = onSnapshot(collection(db, RECORDS_COLLECTION),
+      (snapshot)=>{
+        records = snapshot.docs.map(d=>d.data());
+        dot.classList.remove('offline');
+        render();
+      },
+      (err)=>{
+        console.error('Sync error', err);
+        dot.classList.add('offline');
+        toast('Sync error \u2014 check your connection or Firestore rules.');
+      }
+    );
+  }
+
+  async function upsertRecord(rec){
+    const size = new Blob([JSON.stringify(rec)]).size;
+    if(size > MAX_RECORD_BYTES){
+      toast('This record is too large to save (likely too many/too-large photos). Remove a photo and try again.');
+      return false;
+    }
+    try{
+      await setDoc(doc(db, RECORDS_COLLECTION, rec.id), rec);
+      return true;
+    }catch(err){
+      console.error(err);
+      toast('Could not save \u2014 check your connection and sign-in status.');
+      return false;
+    }
+  }
+
+  async function deleteRecordRemote(id){
+    try{
+      await deleteDoc(doc(db, RECORDS_COLLECTION, id));
+      return true;
+    }catch(err){
+      console.error(err);
+      toast('Could not delete \u2014 check your connection and sign-in status.');
+      return false;
+    }
+  }
+
+  function uid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  }
+
+  // ---------------- Toast ----------------
+  let toastTimer = null;
+  function toast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> el.classList.remove('show'), 2600);
+  }
+
+  // ---------------- Utility ----------------
+  function esc(str){
+    if(str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+
+  function fmtDate(iso){
+    if(!iso) return '';
+    try{
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'});
+    }catch(e){ return iso; }
+  }
+
+  function personSVG(){
+    return '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20c1.5-4 4.2-6 7.5-6s6 2 7.5 6"/></svg>';
+  }
+
+  // ---------------- Image compression ----------------
+  function fileToCompressedDataURL(file, maxDim, quality){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const img = new Image();
+        img.onload = ()=>{
+          let w = img.width, h = img.height;
+          if(w > h && w > maxDim){ h = Math.round(h * maxDim/w); w = maxDim; }
+          else if(h >= w && h > maxDim){ w = Math.round(w * maxDim/h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------------- Filter option population ----------------
+  function uniqueSorted(arr){
+    return Array.from(new Set(arr.filter(v => v && v.trim()))).sort((a,b)=>a.localeCompare(b));
+  }
+
+  function populateFilterOptions(){
+    const raceSel = document.getElementById('fRace');
+    const sexSel = document.getElementById('fSex');
+    const gangSel = document.getElementById('fGang');
+
+    const races = uniqueSorted(records.map(r=>r.race));
+    const gangs = uniqueSorted(records.map(r=>r.gang));
+
+    const keepValue = (sel, opts, label)=>{
+      const current = sel.value;
+      sel.innerHTML = `<option value="">${label}</option>` + opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+      if(opts.includes(current)) sel.value = current;
+    };
+
+    keepValue(raceSel, races, 'All races');
+    keepValue(sexSel, SEX_OPTIONS, 'All');
+    keepValue(gangSel, gangs, 'All affiliations');
+  }
+
+  // ---------------- Filtering / rendering list ----------------
+  function getFilters(){
+    return {
+      q: document.getElementById('q').value.trim().toLowerCase(),
+      race: document.getElementById('fRace').value,
+      sex: document.getElementById('fSex').value,
+      gang: document.getElementById('fGang').value,
+      tattoo: document.getElementById('fTattoo').value.trim().toLowerCase(),
+      weapon: document.getElementById('fWeapon').value.trim().toLowerCase(),
+      hasWeapon: document.getElementById('fHasWeapon').checked,
+      hasTattoo: document.getElementById('fHasTattoo').checked,
+      address: document.getElementById('fAddress').value.trim().toLowerCase(),
+      vehicle: document.getElementById('fVehicle').value.trim().toLowerCase()
+    };
+  }
+
+  function matches(rec, f){
+    if(f.q){
+      const hay = [rec.fullName, ...(rec.monikers||[])].join(' ').toLowerCase();
+      if(!hay.includes(f.q)) return false;
+    }
+    if(f.race && rec.race !== f.race) return false;
+    if(f.sex && rec.sex !== f.sex) return false;
+    if(f.gang && rec.gang !== f.gang) return false;
+    if(f.hasTattoo && (!rec.tattoos || rec.tattoos.length===0)) return false;
+    if(f.hasWeapon && (!rec.weapons || rec.weapons.length===0)) return false;
+    if(f.tattoo){
+      const hay = (rec.tattoos||[]).map(t=>`${t.location} ${t.description}`).join(' ').toLowerCase();
+      if(!hay.includes(f.tattoo)) return false;
+    }
+    if(f.weapon){
+      const hay = (rec.weapons||[]).map(w=>`${w.type} ${w.description}`).join(' ').toLowerCase();
+      if(!hay.includes(f.weapon)) return false;
+    }
+    if(f.address){
+      const a = rec.address || {};
+      const hay = `${a.street||''} ${a.city||''} ${a.state||''} ${a.zip||''}`.toLowerCase();
+      if(!hay.includes(f.address)) return false;
+    }
+    if(f.vehicle){
+      const hay = (rec.vehicles||[]).map(v=>`${v.plate} ${v.make} ${v.model} ${v.color}`).join(' ').toLowerCase();
+      if(!hay.includes(f.vehicle)) return false;
+    }
+    return true;
+  }
+
+  function render(){
+    populateFilterOptions();
+    const f = getFilters();
+    const filtered = records.filter(r => matches(r, f))
+      .sort((a,b)=> (a.fullName||'').localeCompare(b.fullName||''));
+
+    document.getElementById('recordCountLabel').textContent = `${records.length} record${records.length===1?'':'s'}`;
+    document.getElementById('resultCount').textContent = `${filtered.length} result${filtered.length===1?'':'s'}`;
+
+    const grid = document.getElementById('grid');
+    const empty = document.getElementById('emptyState');
+
+    if(filtered.length === 0){
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    grid.innerHTML = filtered.map(r => {
+      const photo = (r.photos && r.photos[0]) ? r.photos[0].dataUrl : null;
+      const akaLine = (r.monikers && r.monikers.length) ? '"' + r.monikers.join('", "') + '"' : '';
+      const tags = [];
+      if(r.gang) tags.push(`<span class="tag tag-gang">${esc(r.gang)}</span>`);
+      if(r.race) tags.push(`<span class="tag">${esc(r.race)}</span>`);
+      if(r.sex) tags.push(`<span class="tag">${esc(r.sex)}</span>`);
+      if(r.weapons && r.weapons.length) tags.push(`<span class="tag tag-warn">Weapons</span>`);
+      if(r.address && r.address.city) tags.push(`<span class="tag">${esc(r.address.city)}</span>`);
+      if(r.vehicles && r.vehicles.length) tags.push(`<span class="tag">${esc(r.vehicles[0].plate || 'Vehicle on file')}</span>`);
+      return `
+      <button class="card card-row" data-id="${esc(r.id)}">
+        <span class="thumb">${photo ? `<img src="${photo}" alt="">` : personSVG()}</span>
+        <span class="card-body">
+          <div class="card-name">${esc(r.fullName || 'Unnamed record')}</div>
+          ${akaLine ? `<div class="card-aka">${esc(akaLine)}</div>` : ''}
+          <div class="card-meta">${tags.join('')}</div>
+        </span>
+      </button>`;
+    }).join('');
+
+    grid.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click', ()=> openDetail(card.getAttribute('data-id')));
+    });
+  }
+
+  // ---------------- Filters panel events ----------------
+  ['q','fRace','fSex','fGang','fTattoo','fWeapon','fHasWeapon','fHasTattoo','fAddress','fVehicle'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+  });
+
+  document.getElementById('resetFilters').addEventListener('click', ()=>{
+    document.getElementById('q').value='';
+    document.getElementById('fRace').value='';
+    document.getElementById('fSex').value='';
+    document.getElementById('fGang').value='';
+    document.getElementById('fTattoo').value='';
+    document.getElementById('fWeapon').value='';
+    document.getElementById('fHasWeapon').checked=false;
+    document.getElementById('fHasTattoo').checked=false;
+    document.getElementById('fAddress').value='';
+    document.getElementById('fVehicle').value='';
+    render();
+  });
+
+  document.getElementById('filtersToggle').addEventListener('click', ()=>{
+    document.getElementById('filtersPanel').classList.add('open');
+    document.getElementById('filtersScrim').classList.add('show');
+  });
+  document.getElementById('filtersScrim').addEventListener('click', closeFilterDrawer);
+  function closeFilterDrawer(){
+    document.getElementById('filtersPanel').classList.remove('open');
+    document.getElementById('filtersScrim').classList.remove('show');
+  }
+
+  // ---------------- Modal helpers ----------------
+  function openModal(html, onMount){
+    lastFocusEl = document.activeElement;
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `<div class="modal-overlay" id="overlay"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;
+    document.getElementById('overlay').addEventListener('mousedown', (e)=>{
+      if(e.target.id === 'overlay') closeModal();
+    });
+    document.addEventListener('keydown', escListener);
+    if(onMount) onMount();
+  }
+  function escListener(e){ if(e.key === 'Escape') closeModal(); }
+  function closeModal(){
+    document.getElementById('modalRoot').innerHTML = '';
+    document.removeEventListener('keydown', escListener);
+    if(lastFocusEl) lastFocusEl.focus();
+  }
+
+  // ---------------- Detail view ----------------
+  function openDetail(id){
+    const r = records.find(x=>x.id===id);
+    if(!r) return;
+
+    const photo = (r.photos && r.photos[0]) ? r.photos[0].dataUrl : null;
+    const tags = [];
+    if(r.gang) tags.push(`<span class="tag tag-gang">${esc(r.gang)}</span>`);
+    if(r.race) tags.push(`<span class="tag">${esc(r.race)}</span>`);
+    if(r.sex) tags.push(`<span class="tag">${esc(r.sex)}</span>`);
+
+    const tattoosHtml = (r.tattoos && r.tattoos.length)
+      ? r.tattoos.map(t=>`<div class="entry-card"><div class="entry-top"><span>${esc(t.location||'Location not specified')}</span></div><div class="entry-body">${esc(t.description||'')}</div></div>`).join('')
+      : `<div class="muted">No tattoos on file.</div>`;
+
+    const weaponsHtml = (r.weapons && r.weapons.length)
+      ? r.weapons.map(w=>`<div class="entry-card"><div class="entry-top"><span>${esc(w.type||'Type not specified')}</span></div><div class="entry-body">${esc(w.description||'')}</div></div>`).join('')
+      : `<div class="muted">No weapons on file.</div>`;
+
+    const addr = r.address || {};
+    const hasAddr = addr.street || addr.city || addr.state || addr.zip;
+    const addressHtml = hasAddr
+      ? `<div class="entry-card">${esc(addr.street||'')}${addr.street?'<br>':''}${esc([addr.city, addr.state].filter(Boolean).join(', '))} ${esc(addr.zip||'')}</div>`
+      : `<div class="muted">No home address on file.</div>`;
+
+    const vehiclesHtml = (r.vehicles && r.vehicles.length)
+      ? r.vehicles.map(v=>`<div class="entry-card"><div class="entry-top"><span>${esc(v.plate||'No plate on file')}</span></div><div class="entry-body">${esc([v.color, v.make, v.model].filter(Boolean).join(' '))}</div></div>`).join('')
+      : `<div class="muted">No vehicles on file.</div>`;
+
+    const contactsHtml = (r.contacts && r.contacts.length)
+      ? r.contacts.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(c=>`<div class="entry-card"><div class="entry-top"><span>${esc(c.type||'Contact')}</span><span>${fmtDate(c.date)}</span></div>${c.officer?`<div class="entry-body" style="margin-bottom:4px;color:var(--text-dim);font-size:12.5px;">${esc(c.officer)}</div>`:''}<div class="entry-body">${esc(c.notes||'')}</div></div>`).join('')
+      : `<div class="muted">No police contacts on file.</div>`;
+
+    const morePhotos = (r.photos && r.photos.length > 1)
+      ? `<div class="detail-section"><h4>Additional photos</h4><div class="photo-strip">${r.photos.slice(1).map(p=>`<img src="${p.dataUrl}" alt="${esc(p.caption||'')}" data-full="${p.dataUrl}">`).join('')}</div></div>`
+      : '';
+
+    openModal(`
+      <div class="modal-header">
+        <h3>Record detail</h3>
+        <button class="icon-btn" id="closeDetail" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-hero">
+          ${photo ? `<img class="detail-photo" src="${photo}" alt="">` : `<div class="detail-photo" style="display:flex;align-items:center;justify-content:center;color:var(--text-faint);">${personSVG()}</div>`}
+          <div class="detail-title">
+            <h2>${esc(r.fullName || 'Unnamed record')}</h2>
+            ${(r.monikers && r.monikers.length) ? `<div class="akas">"${esc(r.monikers.join('", "'))}"</div>` : ''}
+            <div class="tags">${tags.join('')}</div>
+          </div>
+        </div>
+
+        ${morePhotos}
+
+        <div class="detail-section">
+          <h4>Tattoos</h4>
+          ${tattoosHtml}
+        </div>
+        <div class="detail-section">
+          <h4>Weapons information</h4>
+          ${weaponsHtml}
+        </div>
+        <div class="detail-section">
+          <h4>Home address</h4>
+          ${addressHtml}
+        </div>
+        <div class="detail-section">
+          <h4>Vehicles</h4>
+          ${vehiclesHtml}
+        </div>
+        <div class="detail-section">
+          <h4>Police contact history</h4>
+          ${contactsHtml}
+        </div>
+        <div class="detail-section">
+          <h4>Miscellaneous notes</h4>
+          <div class="notes-block">${r.notes ? esc(r.notes) : '<span class="muted">No additional notes.</span>'}</div>
+        </div>
+        <div class="muted" style="margin-top:4px;">
+          Added ${fmtDate(r.dateAdded)}${r.createdBy ? ' by ' + esc(r.createdBy) : ''}${r.dateUpdated && r.dateUpdated !== r.dateAdded ? ' \u00b7 updated ' + fmtDate(r.dateUpdated) + (r.updatedBy ? ' by ' + esc(r.updatedBy) : '') : ''}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="deleteBtn">Delete</button>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" id="closeDetail2">Close</button>
+        <button class="btn btn-primary" id="editBtn">Edit record</button>
+      </div>
+    `, ()=>{
+      document.getElementById('closeDetail').addEventListener('click', closeModal);
+      document.getElementById('closeDetail2').addEventListener('click', closeModal);
+      document.getElementById('editBtn').addEventListener('click', ()=> openForm(r.id));
+      document.getElementById('deleteBtn').addEventListener('click', async ()=>{
+        if(confirm(`Delete the record for ${r.fullName || 'this person'}? This removes it for every detective and cannot be undone.`)){
+          const ok = await deleteRecordRemote(r.id);
+          if(ok){
+            closeModal();
+            toast('Record deleted.');
+          }
+        }
+      });
+      document.querySelectorAll('.photo-strip img').forEach(img=>{
+        img.addEventListener('click', ()=>{
+          const lb = document.createElement('div');
+          lb.className = 'lightbox';
+          lb.innerHTML = `<img src="${img.dataset.full}" alt="">`;
+          lb.addEventListener('click', ()=> lb.remove());
+          document.body.appendChild(lb);
+        });
+      });
+    });
+  }
+
+  // ---------------- Form (create / edit) ----------------
+  function blankRecord(){
+    return { id: uid(), fullName:'', monikers:[], photos:[], race:'', sex:'', gang:'',
+      address:{street:'',city:'',state:'',zip:''}, vehicles:[],
+      tattoos:[], weapons:[], contacts:[], notes:'', dateAdded: new Date().toISOString(), dateUpdated: new Date().toISOString() };
+  }
+
+  function openForm(id){
+    editingId = id || null;
+    const rec = editingId ? JSON.parse(JSON.stringify(records.find(r=>r.id===editingId))) : blankRecord();
+    currentPhotos = rec.photos ? JSON.parse(JSON.stringify(rec.photos)) : [];
+
+    const raceOptionsList = RACE_SUGGESTIONS.map(r=>`<option value="${esc(r)}">`).join('');
+
+    openModal(`
+      <div class="modal-header">
+        <h3>${editingId ? 'Edit record' : 'New record'}</h3>
+        <button class="icon-btn" id="closeForm" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <form id="recordForm">
+          <fieldset>
+            <legend>Identity</legend>
+            <div class="field">
+              <label for="fFullName">Full legal name</label>
+              <input type="text" id="fFullName" required value="${esc(rec.fullName)}" placeholder="Last, First Middle">
+            </div>
+            <div class="field">
+              <label for="fMonikers">Monikers / AKAs (comma-separated)</label>
+              <input type="text" id="fMonikers" value="${esc((rec.monikers||[]).join(', '))}" placeholder="Ghost, Lil Spooky">
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="fFormRace">Race</label>
+                <input type="text" id="fFormRace" list="raceList" value="${esc(rec.race)}" placeholder="Select or type">
+                <datalist id="raceList">${raceOptionsList}</datalist>
+              </div>
+              <div class="field">
+                <label for="fFormSex">Sex</label>
+                <select id="fFormSex">
+                  <option value="">Select</option>
+                  ${SEX_OPTIONS.map(s=>`<option value="${s}" ${rec.sex===s?'selected':''}>${s}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="fFormGang">Gang affiliation</label>
+              <input type="text" id="fFormGang" value="${esc(rec.gang)}" placeholder="e.g. 18th Street">
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Photos</legend>
+            <div class="photo-list" id="photoList"></div>
+            <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+            <button type="button" class="btn btn-ghost btn-sm" id="addPhotoBtn">Add photo(s)</button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Tattoos</legend>
+            <div id="tattooRows"></div>
+            <button type="button" class="add-row-btn" id="addTattoo">+ Add tattoo</button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Weapons information</legend>
+            <div id="weaponRows"></div>
+            <button type="button" class="add-row-btn" id="addWeapon">+ Add weapon</button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Home address</legend>
+            <div class="field">
+              <label for="fStreet">Street address</label>
+              <input type="text" id="fStreet" value="${esc(rec.address ? rec.address.street : '')}" placeholder="123 Main St, Apt 4">
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="fCity">City</label>
+                <input type="text" id="fCity" value="${esc(rec.address ? rec.address.city : '')}">
+              </div>
+              <div class="field">
+                <label for="fState">State</label>
+                <input type="text" id="fState" value="${esc(rec.address ? rec.address.state : '')}" placeholder="CA">
+              </div>
+            </div>
+            <div class="field" style="margin-bottom:0; max-width:160px;">
+              <label for="fZip">ZIP code</label>
+              <input type="text" id="fZip" value="${esc(rec.address ? rec.address.zip : '')}">
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Vehicles</legend>
+            <div id="vehicleRows"></div>
+            <button type="button" class="add-row-btn" id="addVehicle">+ Add vehicle</button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Police contact history</legend>
+            <div id="contactRows"></div>
+            <button type="button" class="add-row-btn" id="addContact">+ Add contact entry</button>
+          </fieldset>
+
+          <fieldset>
+            <legend>Miscellaneous notes</legend>
+            <div class="field" style="margin-bottom:0;">
+              <textarea id="fNotes" rows="4" placeholder="Additional intelligence, associates, vehicles, etc.">${esc(rec.notes)}</textarea>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelForm">Cancel</button>
+        <button class="btn btn-primary" id="saveForm">Save record</button>
+      </div>
+    `, ()=>{
+      renderPhotoList();
+      renderRepeatRows('tattooRows', rec.tattoos, tattooRowHtml);
+      renderRepeatRows('weaponRows', rec.weapons, weaponRowHtml);
+      renderRepeatRows('vehicleRows', rec.vehicles, vehicleRowHtml);
+      renderRepeatRows('contactRows', rec.contacts, contactRowHtml);
+
+      document.getElementById('closeForm').addEventListener('click', closeModal);
+      document.getElementById('cancelForm').addEventListener('click', closeModal);
+
+      document.getElementById('addPhotoBtn').addEventListener('click', ()=> document.getElementById('photoInput').click());
+      document.getElementById('photoInput').addEventListener('change', async (e)=>{
+        const files = Array.from(e.target.files || []);
+        for(const file of files){
+          try{
+            const dataUrl = await fileToCompressedDataURL(file, 640, 0.72);
+            currentPhotos.push({ caption:'', dataUrl });
+          }catch(err){ console.error(err); toast('Could not read that image.'); }
+        }
+        e.target.value = '';
+        renderPhotoList();
+      });
+
+      document.getElementById('addTattoo').addEventListener('click', ()=> addRow('tattooRows', tattooRowHtml({location:'',description:''})));
+      document.getElementById('addWeapon').addEventListener('click', ()=> addRow('weaponRows', weaponRowHtml({type:'',description:''})));
+      document.getElementById('addVehicle').addEventListener('click', ()=> addRow('vehicleRows', vehicleRowHtml({plate:'',make:'',model:'',color:''})));
+      document.getElementById('addContact').addEventListener('click', ()=> addRow('contactRows', contactRowHtml({date:'',type:'',officer:'',notes:''})));
+
+      document.getElementById('saveForm').addEventListener('click', ()=> submitForm(rec));
+    });
+  }
+
+  function renderPhotoList(){
+    const wrap = document.getElementById('photoList');
+    wrap.innerHTML = currentPhotos.map((p, i)=>`
+      <div class="photo-item" data-i="${i}">
+        <img class="ph-thumb" src="${p.dataUrl}" alt="">
+        <button type="button" class="ph-remove" data-i="${i}" aria-label="Remove photo">&times;</button>
+        <input type="text" class="ph-caption" data-i="${i}" placeholder="Caption" value="${esc(p.caption||'')}">
+      </div>
+    `).join('');
+    wrap.querySelectorAll('.ph-remove').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        currentPhotos.splice(Number(btn.dataset.i), 1);
+        renderPhotoList();
+      });
+    });
+    wrap.querySelectorAll('.ph-caption').forEach(inp=>{
+      inp.addEventListener('input', ()=>{ currentPhotos[Number(inp.dataset.i)].caption = inp.value; });
+    });
+  }
+
+  function tattooRowHtml(t){
+    return `
+      <div class="repeat-row" data-kind="tattoo">
+        <button type="button" class="row-remove" aria-label="Remove">&times;</button>
+        <div class="row2">
+          <div class="field"><label>Location on body</label><input type="text" class="f-location" value="${esc(t.location||'')}" placeholder="e.g. left forearm"></div>
+          <div class="field"><label>Description</label><input type="text" class="f-description" value="${esc(t.description||'')}" placeholder="e.g. teardrop, 3 dots"></div>
+        </div>
+      </div>`;
+  }
+  function weaponRowHtml(w){
+    return `
+      <div class="repeat-row" data-kind="weapon">
+        <button type="button" class="row-remove" aria-label="Remove">&times;</button>
+        <div class="row2">
+          <div class="field"><label>Type</label><input type="text" class="f-type" value="${esc(w.type||'')}" placeholder="e.g. handgun, rifle, knife"></div>
+          <div class="field"><label>Description</label><input type="text" class="f-description" value="${esc(w.description||'')}" placeholder="Make, model, caliber, incident"></div>
+        </div>
+      </div>`;
+  }
+  function vehicleRowHtml(v){
+    return `
+      <div class="repeat-row" data-kind="vehicle">
+        <button type="button" class="row-remove" aria-label="Remove">&times;</button>
+        <div class="row2">
+          <div class="field"><label>License plate</label><input type="text" class="f-plate" value="${esc(v.plate||'')}" placeholder="e.g. 7ABC123"></div>
+          <div class="field"><label>Color</label><input type="text" class="f-color" value="${esc(v.color||'')}" placeholder="e.g. Silver"></div>
+        </div>
+        <div class="row2" style="margin-bottom:0;">
+          <div class="field" style="margin-bottom:0;"><label>Make</label><input type="text" class="f-make" value="${esc(v.make||'')}" placeholder="e.g. Honda"></div>
+          <div class="field" style="margin-bottom:0;"><label>Model</label><input type="text" class="f-model" value="${esc(v.model||'')}" placeholder="e.g. Civic"></div>
+        </div>
+      </div>`;
+  }
+  function contactRowHtml(c){
+    return `
+      <div class="repeat-row" data-kind="contact">
+        <button type="button" class="row-remove" aria-label="Remove">&times;</button>
+        <div class="row2">
+          <div class="field"><label>Date</label><input type="date" class="f-date" value="${esc(c.date||'')}"></div>
+          <div class="field"><label>Contact type</label><input type="text" class="f-type" value="${esc(c.type||'')}" placeholder="Field contact, arrest, citation"></div>
+        </div>
+        <div class="field"><label>Officer / agency</label><input type="text" class="f-officer" value="${esc(c.officer||'')}"></div>
+        <div class="field" style="margin-bottom:0;"><label>Narrative</label><textarea class="f-notes" rows="2">${esc(c.notes||'')}</textarea></div>
+      </div>`;
+  }
+
+  function renderRepeatRows(containerId, items, rowFn){
+    const wrap = document.getElementById(containerId);
+    wrap.innerHTML = (items && items.length) ? items.map(rowFn).join('') : '';
+    bindRowRemovers(wrap);
+  }
+  function addRow(containerId, html){
+    const wrap = document.getElementById(containerId);
+    wrap.insertAdjacentHTML('beforeend', html);
+    bindRowRemovers(wrap);
+  }
+  function bindRowRemovers(wrap){
+    wrap.querySelectorAll('.row-remove').forEach(btn=>{
+      btn.onclick = ()=> btn.closest('.repeat-row').remove();
+    });
+  }
+
+  function collectRows(containerId, kind){
+    const rows = Array.from(document.querySelectorAll(`#${containerId} .repeat-row`));
+    return rows.map(row=>{
+      if(kind==='tattoo') return { location: row.querySelector('.f-location').value.trim(), description: row.querySelector('.f-description').value.trim() };
+      if(kind==='weapon') return { type: row.querySelector('.f-type').value.trim(), description: row.querySelector('.f-description').value.trim() };
+      if(kind==='vehicle') return {
+        plate: row.querySelector('.f-plate').value.trim(),
+        make: row.querySelector('.f-make').value.trim(),
+        model: row.querySelector('.f-model').value.trim(),
+        color: row.querySelector('.f-color').value.trim()
+      };
+      if(kind==='contact') return {
+        date: row.querySelector('.f-date').value,
+        type: row.querySelector('.f-type').value.trim(),
+        officer: row.querySelector('.f-officer').value.trim(),
+        notes: row.querySelector('.f-notes').value.trim()
+      };
+    }).filter(item=>{
+      return Object.values(item).some(v=>v && String(v).trim());
+    });
+  }
+
+  async function submitForm(originalRec){
+    const fullName = document.getElementById('fFullName').value.trim();
+    if(!fullName){
+      toast('Full legal name is required.');
+      document.getElementById('fFullName').focus();
+      return;
+    }
+    const monikers = document.getElementById('fMonikers').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const me = auth.currentUser ? auth.currentUser.email : 'unknown';
+
+    const updated = {
+      id: originalRec.id,
+      fullName,
+      monikers,
+      photos: currentPhotos,
+      race: document.getElementById('fFormRace').value.trim(),
+      sex: document.getElementById('fFormSex').value,
+      gang: document.getElementById('fFormGang').value.trim(),
+      address: {
+        street: document.getElementById('fStreet').value.trim(),
+        city: document.getElementById('fCity').value.trim(),
+        state: document.getElementById('fState').value.trim(),
+        zip: document.getElementById('fZip').value.trim()
+      },
+      vehicles: collectRows('vehicleRows','vehicle'),
+      tattoos: collectRows('tattooRows','tattoo'),
+      weapons: collectRows('weaponRows','weapon'),
+      contacts: collectRows('contactRows','contact'),
+      notes: document.getElementById('fNotes').value.trim(),
+      dateAdded: originalRec.dateAdded || new Date().toISOString(),
+      dateUpdated: new Date().toISOString(),
+      createdBy: originalRec.createdBy || me,
+      updatedBy: me
+    };
+
+    const saveBtn = document.getElementById('saveForm');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving\u2026';
+    const ok = await upsertRecord(updated);
+    if(ok){
+      closeModal();
+      toast(editingId ? 'Record updated.' : 'Record created.');
+    } else {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save record';
+    }
+  }
+
+  document.getElementById('newRecordBtn').addEventListener('click', ()=> openForm(null));
+
+  // ---------------- Backup menu (export / import) ----------------
+  document.getElementById('menuBtn').addEventListener('click', ()=>{
+    openModal(`
+      <div class="modal-header">
+        <h3>Data &amp; backup</h3>
+        <button class="icon-btn" id="closeMenu" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <p class="muted" style="margin-top:0;">Records are stored in the shared database and sync to every signed-in detective in real time. Export a backup periodically anyway, as an offline archive.</p>
+        <div class="field">
+          <button class="btn" id="exportBtn" style="width:100%; justify-content:center;">Export all records (.json)</button>
+        </div>
+        <div class="field">
+          <input type="file" id="importInput" accept="application/json" style="display:none">
+          <button class="btn" id="importBtn" style="width:100%; justify-content:center;">Import from backup file</button>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <button class="btn btn-danger" id="wipeBtn" style="width:100%; justify-content:center;">Erase all shared records</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="closeMenu2">Close</button>
+      </div>
+    `, ()=>{
+      document.getElementById('closeMenu').addEventListener('click', closeModal);
+      document.getElementById('closeMenu2').addEventListener('click', closeModal);
+      document.getElementById('exportBtn').addEventListener('click', exportData);
+      document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importInput').click());
+      document.getElementById('importInput').addEventListener('change', importData);
+      document.getElementById('wipeBtn').addEventListener('click', async ()=>{
+        const typed = prompt('This erases every record for every detective, permanently. Export a backup first if you have not.\n\nType DELETE to confirm:');
+        if(typed === 'DELETE'){
+          const batch = writeBatch(db);
+          records.forEach(r=> batch.delete(doc(db, RECORDS_COLLECTION, r.id)));
+          try{
+            await batch.commit();
+            closeModal();
+            toast('All shared records erased.');
+          }catch(err){
+            console.error(err);
+            toast('Could not erase records \u2014 check your connection.');
+          }
+        }
+      });
+    });
+  });
+
+  function exportData(){
+    const blob = new Blob([JSON.stringify(records, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `gang-db-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Backup file downloaded.');
+  }
+
+  function importData(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async ()=>{
+      try{
+        const incoming = JSON.parse(reader.result);
+        if(!Array.isArray(incoming)) throw new Error('not an array');
+        const replaceMode = !confirm('Click OK to MERGE this file into the shared database, or Cancel to REPLACE all existing shared records with this file.');
+        if(replaceMode){
+          const typed = prompt('REPLACE will delete every existing shared record first. Type DELETE to confirm:');
+          if(typed !== 'DELETE') return;
+          const delBatch = writeBatch(db);
+          records.forEach(r=> delBatch.delete(doc(db, RECORDS_COLLECTION, r.id)));
+          await delBatch.commit();
+        }
+        const existingIds = new Set(replaceMode ? [] : records.map(r=>r.id));
+        const writeBatchObj = writeBatch(db);
+        let count = 0;
+        incoming.forEach(r=>{
+          if(replaceMode || !existingIds.has(r.id)){
+            writeBatchObj.set(doc(db, RECORDS_COLLECTION, r.id || uid()), r);
+            count++;
+          }
+        });
+        if(count > 0) await writeBatchObj.commit();
+        closeModal();
+        toast(`Import complete \u2014 ${count} record${count===1?'':'s'} added.`);
+      }catch(err){
+        console.error(err);
+        toast('That file could not be read as a valid backup.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  // ---------------- Service worker ----------------
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
